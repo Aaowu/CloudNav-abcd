@@ -2474,6 +2474,7 @@ function App() {
             )}
 
             {/* 2. Main Grid */}
+            {(selectedCategory !== 'all' || searchQuery) && (
             <section>
                  {(!pinnedLinks.length && !searchQuery && selectedCategory === 'all') && (
                     <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg flex items-center justify-between">
@@ -2639,6 +2640,7 @@ function App() {
                     )
                  )}
             </section>
+            )}
 
             {/* 其他目录搜索结果区域 */}
             {searchQuery.trim() && selectedCategory !== 'all' && (
