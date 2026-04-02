@@ -897,8 +897,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">网站图标 (Favicon URL)</label>
                                 <div className="flex gap-3 items-center">
-                                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-600">
-                                        {localSiteSettings.favicon ? <img src={localSiteSettings.favicon} className="w-full h-full object-cover"/> : <Globe size={20} className="text-slate-400"/>}
+                                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-600">
+                                        {localSiteSettings.favicon ? <img src={localSiteSettings.favicon} className="w-full h-full object-cover rounded-xl"/> : <Globe size={20} className="text-slate-400"/>}
                                     </div>
                                     <input 
                                         type="text" 
@@ -942,16 +942,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             <button 
                                                 key={idx}
                                                 onClick={() => handleSiteChange('favicon', icon)}
-                                                className="w-8 h-8 rounded hover:ring-2 ring-blue-500 transition-all border border-slate-100 dark:border-slate-600"
+                                                className="w-8 h-8 rounded-xl overflow-hidden hover:ring-2 ring-blue-500 transition-all border border-slate-100 dark:border-slate-600"
                                             >
-                                                <img src={icon} className="w-full h-full rounded" />
+                                                <img src={icon} className="w-full h-full object-cover rounded-xl" />
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             </div>
                             <div>
-                                <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                                <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 px-4 py-3">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">访问时先验密</label>
                                         <p className="text-xs text-slate-500 mt-1">打开后，访问网站就先输密码。关闭后，只有点设置这些操作才验密。</p>
@@ -959,16 +959,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <button
                                         type="button"
                                         onClick={() => handleSiteChange('requirePasswordOnVisit', !localSiteSettings.requirePasswordOnVisit)}
-                                        className={`relative h-7 w-12 rounded-full transition-colors ${
-                                            localSiteSettings.requirePasswordOnVisit ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'
+                                        className={`relative inline-flex h-8 w-14 items-center rounded-full border transition-all duration-200 ${
+                                            localSiteSettings.requirePasswordOnVisit
+                                              ? 'border-blue-500 bg-blue-600 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]'
+                                              : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800'
                                         }`}
                                         aria-pressed={localSiteSettings.requirePasswordOnVisit}
                                     >
                                         <span
-                                            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
-                                                localSiteSettings.requirePasswordOnVisit ? 'translate-x-6' : 'translate-x-1'
+                                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                                                localSiteSettings.requirePasswordOnVisit ? 'translate-x-7' : 'translate-x-1'
                                             }`}
-                                        />
+                                        >
+                                            <span className={`h-2.5 w-2.5 rounded-full ${localSiteSettings.requirePasswordOnVisit ? 'bg-blue-600' : 'bg-slate-400'}`} />
+                                        </span>
                                     </button>
                                 </div>
                             </div>

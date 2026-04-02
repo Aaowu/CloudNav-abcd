@@ -338,11 +338,15 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, onDelete
             <label className="block text-sm font-medium mb-1 dark:text-slate-300">图标 URL</label>
             <div className="flex gap-2">
               {icon && (
-                <div className="w-10 h-10 rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden flex-shrink-0 bg-white dark:bg-slate-700">
+                <div className="w-10 h-10 rounded-xl border border-slate-300 dark:border-slate-600 overflow-hidden flex-shrink-0 bg-white dark:bg-slate-700">
                   <img
+                    key={icon}
                     src={icon}
                     alt="图标预览"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-cover rounded-xl"
+                    onLoad={(e) => {
+                      e.currentTarget.style.display = 'block';
+                    }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
