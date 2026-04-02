@@ -279,6 +279,12 @@ function App() {
       }
   };
 
+  const requireAuth = () => {
+    if (authToken) return true;
+    setIsAuthOpen(true);
+    return false;
+  };
+
   // --- Context Menu Functions ---
   const handleContextMenu = (event: React.MouseEvent, link: LinkItem) => {
     event.preventDefault();
@@ -331,6 +337,7 @@ function App() {
 
   const editLinkFromContextMenu = () => {
     if (!contextMenu.link) return;
+    if (!requireAuth()) return;
     
     setEditingLink(contextMenu.link);
     setIsModalOpen(true);
@@ -339,6 +346,7 @@ function App() {
 
   const deleteLinkFromContextMenu = () => {
     if (!contextMenu.link) return;
+    if (!requireAuth()) return;
     
     if (window.confirm(`确定要删除"${contextMenu.link.title}"吗？`)) {
       const newLinks = links.filter(link => link.id !== contextMenu.link!.id);
@@ -350,6 +358,7 @@ function App() {
 
   const togglePinFromContextMenu = () => {
     if (!contextMenu.link) return;
+    if (!requireAuth()) return;
     
     const linkToToggle = links.find(l => l.id === contextMenu.link!.id);
     if (!linkToToggle) return;
@@ -512,7 +521,11 @@ function App() {
             categoryId: 'common' // Default, Modal will handle selection
         });
         setEditingLink(undefined);
-        setIsModalOpen(true);
+        if (savedToken) {
+            setIsModalOpen(true);
+        } else {
+            setIsAuthOpen(true);
+        }
     }
 
     // Initial Data Fetch
@@ -523,13 +536,6 @@ function App() {
             if (authRes.ok) {
                 const authData = await authRes.json();
                 setRequiresAuth(authData.requiresAuth);
-                
-                // 如果需要认证但用户未登录，则不获取数据
-                if (authData.requiresAuth && !savedToken) {
-                    setIsCheckingAuth(false);
-                    setIsAuthOpen(true);
-                    return;
-                }
             }
         } catch (e) {
             console.warn("Failed to check auth requirement.", e);
@@ -743,6 +749,7 @@ function App() {
 
   // --- Batch Edit Functions ---
   const toggleBatchEditMode = () => {
+    if (!requireAuth()) return;
     setIsBatchEditMode(!isBatchEditMode);
     setSelectedLinks(new Set()); // 退出批量编辑模式时清空选中项
   };
@@ -1153,6 +1160,7 @@ function App() {
 
   // 开始排序
   const startSorting = (categoryId: string) => {
+    if (!requireAuth()) return;
     setIsSortingMode(categoryId);
   };
 
@@ -1949,7 +1957,7 @@ function App() {
             isDetailedView ? 'top-3 right-3' : 'top-1/2 -translate-y-1/2 right-2'
           }`}>
               <button 
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingLink(link); setIsModalOpen(true); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); if(!requireAuth()) return; setEditingLink(link); setIsModalOpen(true); }}
                   className="p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                   title="编辑"
               >
@@ -1965,30 +1973,7 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden text-slate-900 dark:text-slate-50">
-      {/* 认证遮罩层 - 当需要认证时显示 */}
-      {requiresAuth && !authToken && (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 flex items-center justify-center">
-          <div className="w-full max-w-md p-6">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                <Lock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-                需要身份验证
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400">
-                此导航页面设置了访问密码，请输入密码以继续访问
-              </p>
-            </div>
-            <AuthModal isOpen={true} onLogin={handleLogin} />
-          </div>
-        </div>
-      )}
-      
-      {/* 主要内容 - 只有在不需要认证或已认证时显示 */}
-      {(!requiresAuth || authToken) && (
-        <>
-          <AuthModal isOpen={isAuthOpen} onLogin={handleLogin} />
+      <AuthModal isOpen={isAuthOpen} onLogin={handleLogin} />
       
       <CategoryAuthModal 
         isOpen={!!catAuthModalData}
@@ -2142,7 +2127,7 @@ function App() {
                 </button>
 
                 <button 
-                    onClick={() => setIsSettingsModalOpen(true)}
+                    onClick={() => { if(!authToken) setIsAuthOpen(true); else setIsSettingsModalOpen(true); }}
                     className="flex flex-col items-center justify-center gap-1 p-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-all"
                     title="AI 设置"
                 >
@@ -2446,7 +2431,7 @@ function App() {
                             </div>
                         ) : (
                             <button 
-                                onClick={() => setIsSortingPinned(true)}
+                                onClick={() => { if(!requireAuth()) return; setIsSortingPinned(true); }}
                                 className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-full transition-colors"
                                 title="排序"
                             >
@@ -2489,7 +2474,6 @@ function App() {
             )}
 
             {/* 2. Main Grid */}
-            {(selectedCategory !== 'all' || searchQuery) && (
             <section>
                  {(!pinnedLinks.length && !searchQuery && selectedCategory === 'all') && (
                     <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg flex items-center justify-between">
@@ -2617,7 +2601,7 @@ function App() {
                                 <Search size={40} className="opacity-30 mb-4" />
                                 <p>没有找到相关内容</p>
                                 {selectedCategory !== 'all' && (
-                                    <button onClick={() => setIsModalOpen(true)} className="mt-4 text-blue-500 hover:underline">添加一个?</button>
+                                    <button onClick={() => { if(!requireAuth()) return; setIsModalOpen(true); }} className="mt-4 text-blue-500 hover:underline">添加一个?</button>
                                 )}
                             </>
                         )}
@@ -2655,7 +2639,6 @@ function App() {
                     )
                  )}
             </section>
-            )}
 
             {/* 其他目录搜索结果区域 */}
             {searchQuery.trim() && selectedCategory !== 'all' && (
@@ -2742,8 +2725,7 @@ function App() {
             title={qrCodeModal.title || ''}
             onClose={() => setQrCodeModal({ isOpen: false, url: '', title: '' })}
           />
-        </>
-      )}
+      
     </div>
   );
 }
