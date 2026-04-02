@@ -1077,33 +1077,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         <div className="space-y-3">
                             <h4 className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                                <span className="flex items-center justify-center w-6 h-                                -6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold">1</span>
-                                输入访问密码
+                                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold">1</span>
+                                扩展地址
                             </h4>
                             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <div className="space-y-3">
-                                     <div>
-                                        <label className="text-xs text-slate-500 mb-1 block">API 域名 (自动获取)</label>
-                                        <code className="block w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-400 font-mono truncate">
-                                            {domain}
-                                        </code>
-                                     </div>
-                                     <div>
-                                        <label className="text-xs text-slate-500 mb-1 block">访问密码 (Password)</label>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="text" 
-                                                value={password} 
-                                                readOnly 
-                                                className="flex-1 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-sm outline-none font-mono"
-                                                placeholder="未登录 / 未设置"
-                                            />
-                                             <button onClick={() => handleCopy(password, 'pwd')} className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-blue-500 rounded text-slate-600 dark:text-slate-400 transition-colors">
-                                                {copiedStates['pwd'] ? <Check size={16}/> : <Copy size={16}/>}
-                                            </button>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 mt-1">此密码对应您部署时设置的 PASSWORD 环境变量。</p>
-                                     </div>
+                                <div>
+                                    <label className="text-xs text-slate-500 mb-1 block">API 域名 (自动获取)</label>
+                                    <code className="block w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-400 font-mono truncate">
+                                        {domain}
+                                    </code>
                                 </div>
                             </div>
                         </div>
