@@ -246,12 +246,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const getManifestJson = () => {
+    const navName = localSiteSettings.navTitle || "CloudNav";
     const json: any = {
         manifest_version: 3,
-        name: (localSiteSettings.navTitle || "CloudNav") + " Pro",
+        name: navName + " Pro",
         version: "7.6",
         minimum_chrome_version: "116",
-        description: "CloudNav - 极速侧边栏与智能收藏",
+        description: `${navName} - 极速侧边栏与智能收藏`,
         permissions: ["activeTab", "scripting", "sidePanel", "storage", "favicon", "contextMenus", "notifications", "tabs"],
         background: {
             service_worker: "background.js"
@@ -271,7 +272,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               "default": "Ctrl+Shift+E",
               "mac": "Command+Shift+E"
             },
-            "description": "打开/关闭 CloudNav 侧边栏"
+            "description": `打开/关闭 ${navName} 侧边栏`
           }
         }
     };
@@ -288,10 +289,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     return JSON.stringify(json, null, 2);
   };
 
-  const extBackgroundJs = `// background.js - CloudNav Assistant v7.6
+  const extBackgroundJs = `// background.js - ${localSiteSettings.navTitle || 'CloudNav'} Assistant v7.6
 const CONFIG = {
   apiBase: "${domain}",
-  password: "${password}"
+  password: "${password}",
+  siteName: "${(localSiteSettings.navTitle || 'CloudNav').replace(/"/g, '\\"')}"
 };
 
 let linkCache = [];
@@ -357,7 +359,7 @@ function buildMenus() {
     chrome.contextMenus.removeAll(() => {
         chrome.contextMenus.create({
             id: "cloudnav_root",
-            title: "⚡ 保存到 CloudNav",
+            title: \`⚡ 保存到 \${CONFIG.siteName}\`,
             contexts: ["page", "link", "action"]
         });
 
@@ -385,7 +387,7 @@ function updateMenuTitle(url) {
     if (!url) return;
     const cleanUrl = url.replace(/\\/$/, '').toLowerCase();
     const exists = linkCache.some(l => l.url && l.url.replace(/\\/$/, '').toLowerCase() === cleanUrl);
-    const newTitle = exists ? "⚠️ 已存在 - 保存到 CloudNav" : "⚡ 保存到 CloudNav";
+    const newTitle = exists ? \`⚠️ 已存在 - 保存到 \${CONFIG.siteName}\` : \`⚡ 保存到 \${CONFIG.siteName}\`;
     chrome.contextMenus.update("cloudnav_root", { title: newTitle }, () => {
         if (chrome.runtime.lastError) { }
     });
@@ -444,7 +446,7 @@ async function saveLink(title, url, categoryId, icon = '') {
         });
 
         if (res.ok) {
-            notify('保存成功', \`已保存到 CloudNav\`);
+            notify('保存成功', \`已保存到 \${CONFIG.siteName}\`);
             chrome.runtime.sendMessage({ type: 'refresh' }).catch(() => {});
             const newLink = { id: Date.now().toString(), title, url, categoryId, icon };
             linkCache.unshift(newLink);
@@ -491,10 +493,12 @@ function notify(title, message) {
                 --muted: #94a3b8;
             }
         }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px; width: 100%; box-sizing: border-box; }
+        html, body { width: 100%; min-width: 0; max-width: 100%; overflow-x: hidden; }
+        * { box-sizing: border-box; min-width: 0; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px; }
         
-        .header { position: sticky; top: 0; padding: 10px 12px; background: var(--bg); border-bottom: 1px solid var(--border); z-index: 10; display: flex; gap: 8px; }
-        .search-input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--hover); color: var(--text); outline: none; box-sizing: border-box; font-size: 13px; }
+        .header { position: sticky; top: 0; padding: 10px 12px; background: var(--bg); border-bottom: 1px solid var(--border); z-index: 10; display: flex; gap: 8px; min-width: 0; }
+        .search-input { flex: 1; min-width: 0; width: 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--hover); color: var(--text); outline: none; font-size: 13px; }
         .search-input:focus { border-color: var(--accent); }
         
         .refresh-btn { width: 30px; display: flex; items-center; justify-content: center; border: 1px solid var(--border); background: var(--hover); border-radius: 6px; color: var(--muted); cursor: pointer; transition: all 0.2s; }
@@ -503,13 +507,14 @@ function notify(title, message) {
         .rotating { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        .content { padding: 4px; }
+        .content { padding: 4px; min-width: 0; }
         .cat-group { margin-bottom: 2px; }
         .cat-header { 
             padding: 8px 10px; font-size: 13px; font-weight: 600; color: var(--text); 
             cursor: pointer; display: flex; items-center; gap: 8px; border-radius: 6px;
             user-select: none; transition: background 0.1s;
         }
+        .cat-header span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cat-header:hover { background: var(--hover); }
         .cat-arrow { width: 14px; height: 14px; color: var(--muted); transition: transform 0.2s; }
         .cat-header.active .cat-arrow { transform: rotate(90deg); color: var(--accent); }
