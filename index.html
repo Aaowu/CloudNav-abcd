@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="https://lucide.dev/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>云航 CloudNav</title>
+    <title></title>
+    <script>
+      (function () {
+        try {
+          const saved = localStorage.getItem('cloudnav_site_settings');
+          if (!saved) return;
+          const settings = JSON.parse(saved);
+          if (settings && settings.title) {
+            document.title = settings.title;
+          }
+          if (settings && settings.favicon) {
+            const favicon = document.querySelector('link[rel="icon"]');
+            if (favicon) {
+              favicon.href = settings.favicon;
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
