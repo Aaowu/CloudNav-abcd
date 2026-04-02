@@ -102,6 +102,7 @@ function App() {
           navTitle: 'CloudNav',
           favicon: '',
           cardStyle: 'detailed' as const,
+          requirePasswordOnVisit: false,
           passwordExpiryDays: 7
       };
   });
@@ -536,6 +537,10 @@ function App() {
             if (authRes.ok) {
                 const authData = await authRes.json();
                 setRequiresAuth(authData.requiresAuth);
+                if (authData.requiresAuth && !savedToken) {
+                    setIsCheckingAuth(false);
+                    return;
+                }
             }
         } catch (e) {
             console.warn("Failed to check auth requirement.", e);
@@ -600,6 +605,7 @@ function App() {
                         navTitle: websiteConfigData.navTitle || prev.navTitle,
                         favicon: websiteConfigData.favicon || prev.favicon,
                         cardStyle: websiteConfigData.cardStyle || prev.cardStyle,
+                        requirePasswordOnVisit: websiteConfigData.requirePasswordOnVisit !== undefined ? websiteConfigData.requirePasswordOnVisit : prev.requirePasswordOnVisit,
                         passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays
                     }));
                 }
@@ -843,6 +849,7 @@ function App() {
                             navTitle: websiteConfigData.navTitle || prev.navTitle,
                             favicon: websiteConfigData.favicon || prev.favicon,
                             cardStyle: websiteConfigData.cardStyle || prev.cardStyle,
+                            requirePasswordOnVisit: websiteConfigData.requirePasswordOnVisit !== undefined ? websiteConfigData.requirePasswordOnVisit : prev.requirePasswordOnVisit,
                             passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays
                         }));
                     }
@@ -1971,10 +1978,32 @@ function App() {
     );
   };
 
+  if (isCheckingAuth && requiresAuth === null) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden text-slate-900 dark:text-slate-50">
-      <AuthModal isOpen={isAuthOpen} onLogin={handleLogin} />
-      
+      <AuthModal
+        isOpen={isAuthOpen}
+        onLogin={handleLogin}
+        onClose={() => setIsAuthOpen(false)}
+        canClose={true}
+        description="输入部署时设置的 PASSWORD，验证后就能继续操作。"
+      />
+      {requiresAuth && !authToken && (
+        <AuthModal
+          isOpen={true}
+          onLogin={handleLogin}
+          description="这个站点开了访问验证，先输密码才能看。"
+        />
+      )}
+      {(!requiresAuth || authToken) && (
+      <>
       <CategoryAuthModal 
         isOpen={!!catAuthModalData}
         category={catAuthModalData}
@@ -2727,7 +2756,8 @@ function App() {
             title={qrCodeModal.title || ''}
             onClose={() => setQrCodeModal({ isOpen: false, url: '', title: '' })}
           />
-      
+      </>
+      )}
     </div>
   );
 }

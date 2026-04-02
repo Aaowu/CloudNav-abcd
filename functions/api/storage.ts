@@ -3,6 +3,15 @@ interface Env {
   PASSWORD: string;
 }
 
+interface WebsiteConfig {
+  title?: string;
+  navTitle?: string;
+  favicon?: string;
+  cardStyle?: 'detailed' | 'simple';
+  requirePasswordOnVisit?: boolean;
+  passwordExpiryDays?: number;
+}
+
 // 统一的响应头
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,13 +34,16 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
     const url = new URL(request.url);
     const checkAuth = url.searchParams.get('checkAuth');
     const getConfig = url.searchParams.get('getConfig');
+    const websiteConfigStr = await env.CLOUDNAV_KV.get('website_config');
+    const websiteConfig: WebsiteConfig = websiteConfigStr ? JSON.parse(websiteConfigStr) : { requirePasswordOnVisit: false, passwordExpiryDays: 7 };
+    const serverPassword = env.PASSWORD;
+    const requiresAuth = !!serverPassword && !!websiteConfig.requirePasswordOnVisit;
     
     // 如果是检查认证请求，返回是否设置了密码
     if (checkAuth === 'true') {
-      const serverPassword = env.PASSWORD;
       return new Response(JSON.stringify({ 
         hasPassword: !!serverPassword,
-        requiresAuth: !!serverPassword 
+        requiresAuth
       }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
@@ -55,8 +67,11 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
     
     // 如果是获取网站配置请求
     if (getConfig === 'website') {
-      const websiteConfig = await env.CLOUDNAV_KV.get('website_config');
-      return new Response(websiteConfig || JSON.stringify({ passwordExpiryDays: 7 }), {
+      return new Response(JSON.stringify({
+        requirePasswordOnVisit: false,
+        passwordExpiryDays: 7,
+        ...websiteConfig,
+      }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
@@ -88,10 +103,10 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
     // 从 KV 中读取数据
     const data = await env.CLOUDNAV_KV.get('app_data');
     
-    // 如果是获取数据请求，需要密码验证
-    if (url.searchParams.get('getConfig') === 'true') {
+    // 如果开启了访问认证，读取数据时也需要密码
+    if (requiresAuth) {
       const password = request.headers.get('x-auth-password');
-      if (!password || password !== env.PASSWORD) {
+      if (!password || password !== serverPassword) {
         return new Response(JSON.stringify({ error: '密码错误' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -99,8 +114,6 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
       }
       
       // 检查密码是否过期
-      const websiteConfigStr = await env.CLOUDNAV_KV.get('website_config');
-      const websiteConfig = websiteConfigStr ? JSON.parse(websiteConfigStr) : { passwordExpiryDays: 7 };
       const passwordExpiryDays = websiteConfig.passwordExpiryDays || 7;
       
       // 如果设置了密码过期时间，检查是否过期
