@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Bot, Key, Globe, Sparkles, PauseCircle, Wrench, Box, Copy, Check, LayoutTemplate, RefreshCw, Info, Download, Sidebar, Keyboard, MousePointerClick, AlertTriangle, Package, Zap, Menu } from 'lucide-react';
+import { X, Save, Bot, Key, Globe, Sparkles, PauseCircle, Wrench, Box, Copy, Check, LayoutTemplate, RefreshCw, Info, Download, Sidebar, Keyboard, MousePointerClick, AlertTriangle, Package, Zap, Menu, Upload } from 'lucide-react';
 import { AIConfig, LinkItem, Category, SiteSettings } from '../types';
 import { generateLinkDescription } from '../services/geminiService';
 import JSZip from 'jszip';
@@ -82,6 +82,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [domain, setDomain] = useState('');
   const [browserType, setBrowserType] = useState<'chrome' | 'firefox'>('chrome');
   const [isZipping, setIsZipping] = useState(false);
+  const faviconUploadRef = useRef<HTMLInputElement>(null);
   
   const [copiedStates, setCopiedStates] = useState<{[key: string]: boolean}>({});
 
@@ -210,6 +211,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       setTimeout(() => {
           setCopiedStates(prev => ({ ...prev, [key]: false }));
       }, 2000);
+  };
+
+  const handleLocalFaviconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+          alert('请上传图片文件');
+          e.target.value = '';
+          return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+          if (typeof reader.result === 'string') {
+              handleSiteChange('favicon', reader.result);
+          }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
   };
 
   const handleDownloadFile = (filename: string, content: string) => {
@@ -521,7 +542,7 @@ function notify(title, message) {
 </body>
 </html>`;
 
-  const extSidebarJs = `const CONFIG = {
+const extSidebarJs = `const CONFIG = {
   apiBase: "${domain}",
   password: "${password}"
 };
@@ -557,6 +578,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const getArrowIcon = () => {
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cat-arrow"><polyline points="9 18 15 12 9 6"></polyline></svg>';
     };
+
+    const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 
     const getFaviconUrl = (pageUrl) => {
         try {
@@ -623,10 +651,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             catLinks.forEach(link => {
                 const iconSrc = getFaviconUrl(link.url);
                 html += \`
-                    <a href="\${link.url}" target="_blank" class="link-item">
-                        <div class="link-icon"><img src="\${iconSrc}" /></div>
+                    <a href="\${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" class="link-item">
+                        <div class="link-icon"><img src="\${escapeHtml(iconSrc)}" /></div>
                         <div class="link-info">
-                            <div class="link-title">\${link.title}</div>
+                            <div class="link-title">\${escapeHtml(link.title)}</div>
                         </div>
                     </a>
                 \`;
@@ -672,7 +700,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             render(searchInput.value);
         } catch (e) {
-            container.innerHTML = \`<div class="empty" style="color:#ef4444">加载失败: \${e.message}<br>请点击右上角刷新</div>\`;
+            container.innerHTML = \`<div class="empty" style="color:#ef4444">加载失败: \${escapeHtml(e.message)}<br>请点击右上角刷新</div>\`;
         } finally {
             refreshBtn.classList.remove('rotating');
         }
@@ -879,6 +907,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         placeholder="https://example.com/favicon.ico"
                                         className="flex-1 p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                     />
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                    <input
+                                        ref={faviconUploadRef}
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleLocalFaviconUpload}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => faviconUploadRef.current?.click()}
+                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                    >
+                                        <Upload size={12} />
+                                        本地上传
+                                    </button>
+                                    <p className="text-xs text-slate-500">会直接存成图片数据，不用图床。</p>
                                 </div>
                                 <div className="mt-3">
                                     <div className="flex items-center justify-between mb-2">

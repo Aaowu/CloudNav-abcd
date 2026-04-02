@@ -12,18 +12,27 @@ interface WebsiteConfig {
   passwordExpiryDays?: number;
 }
 
-// 统一的响应头
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, x-auth-password',
+const getCorsHeaders = (request: Request) => {
+  const requestUrl = new URL(request.url);
+  const origin = request.headers.get('Origin');
+  const allowOrigin = origin && (
+    origin === requestUrl.origin ||
+    origin.startsWith('chrome-extension://') ||
+    origin.startsWith('moz-extension://')
+  ) ? origin : requestUrl.origin;
+
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, x-auth-password',
+  };
 };
 
 // 处理 OPTIONS 请求（解决跨域预检）
-export const onRequestOptions = async () => {
+export const onRequestOptions = async (context: { request: Request }) => {
   return new Response(null, {
     status: 204,
-    headers: corsHeaders,
+    headers: getCorsHeaders(context.request),
   });
 };
 
@@ -31,6 +40,7 @@ export const onRequestOptions = async () => {
 export const onRequestGet = async (context: { env: Env; request: Request }) => {
   try {
     const { env, request } = context;
+    const corsHeaders = getCorsHeaders(request);
     const url = new URL(request.url);
     const checkAuth = url.searchParams.get('checkAuth');
     const getConfig = url.searchParams.get('getConfig');
@@ -159,6 +169,7 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
 // POST: 保存数据
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
 
   // 1. 验证密码（对于敏感操作需要密码）
   const providedPassword = request.headers.get('x-auth-password');
@@ -209,12 +220,19 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       });
     }
     
-    // 如果是保存图标（允许无密码访问）
+    // 保存图标也需要密码，避免任意写入缓存
     if (body.saveConfig === 'favicon') {
       const { domain, icon } = body;
       if (!domain || !icon) {
         return new Response(JSON.stringify({ error: 'Domain and icon are required' }), {
           status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+
+      if (!serverPassword || providedPassword !== serverPassword) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
       }

@@ -98,7 +98,7 @@ function App() {
           } catch (e) {}
       }
       return {
-          title: 'CloudNav - 我的导航',
+          title: '',
           navTitle: 'CloudNav',
           favicon: '',
           cardStyle: 'detailed' as const,

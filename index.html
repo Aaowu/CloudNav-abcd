@@ -9,8 +9,18 @@
       (function () {
         try {
           const saved = localStorage.getItem('cloudnav_site_settings');
-          if (!saved) return;
-          const settings = JSON.parse(saved);
+          let settings = saved ? JSON.parse(saved) : null;
+
+          if (!settings) {
+            const req = new XMLHttpRequest();
+            req.open('GET', '/api/storage?getConfig=website', false);
+            req.send(null);
+            if (req.status >= 200 && req.status < 300 && req.responseText) {
+              settings = JSON.parse(req.responseText);
+              localStorage.setItem('cloudnav_site_settings', JSON.stringify(settings));
+            }
+          }
+
           if (settings && settings.title) {
             document.title = settings.title;
           }
